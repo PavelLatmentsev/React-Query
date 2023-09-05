@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { ITodo } from "./app.interface";
-const todoId = 1;
+import todoService from "./services/todo.service";
 function App() {
   // const {isLoading, isSuccess,error, data}=useQuery(["todos", todoId],()=>fetch("https://jsonplaceholder.typicode.com/todos/1").then(res=>res.json())); // вариант с фетчем
   const { isLoading, isSuccess, error, data } = useQuery(
-    ["todos", todoId],
-    () => axios.get<ITodo>("https://jsonplaceholder.typicode.com/todos/1"),
+    ["todos"],
+    // () => axios.get<ITodo>("https://jsonplaceholder.typicode.com/todos/1"), для примера одиночный запрос
+    () => todoService.getAllTodos(),
     {
       select: ({ data }) => data,
     }
@@ -17,13 +16,13 @@ function App() {
       {/* {error && <div>{error}</div>} */}
       {isLoading ? (
         <div>Loading...</div>
-      ) : data ? (
-        <h1>Todo: {data.title}</h1>
-      ) : (
+      ) : data?.length ? data.map(todo => (
+        <div><b>{todo.id}:</b>{todo.title}</div>
+      )) : (
         <h1>data not found</h1>
       )}
     </div>
   );
 }
 
-export default App;
+export  {App};
