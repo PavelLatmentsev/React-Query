@@ -1,6 +1,10 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useIsFetching,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTodos } from "./hooks/useTodos";
-import "./App.css"
+import "./App.css";
 import { SyntheticEvent, useState } from "react";
 import todoService from "./services/todo.service";
 
@@ -28,64 +32,70 @@ function App() {
   // Вариант через хук
 
   // const{data, isLoading, isSuccess, error, refetch} = useTodos();//вытаскиваем из хука рефетч
-  const [title, setTitle]=useState("");
-  const { data, isLoading, isSuccess, error } = useTodos();
+  const [title, setTitle] = useState("");
+  const { data, isLoading, isSuccess, error, refetch } = useTodos();
   const queryClient = useQueryClient();
   console.log(data, isLoading, isSuccess, error);
+  const countFetching = useIsFetching();
+  const { mutate } = useMutation(
+    ["create todo"],
+    (title: string) => todoService.create(title),
+    {
+      async onSuccess() {
+        setTitle(" "), alert("Todo created");
+        await refetch(); //просто для примера обычно так не пишут
+      },
+      onSettled() {
+        console.log("Выполняюсь всегда");
+      },
+    }
+  );
 
-const {mutate}= useMutation(["create todo"], (title:string)=> todoService.create(title), {
-  onSuccess() {
-    setTitle(" "),
-    alert("Todo created")
-  }
-})
-
-
-  const submitHeandler = (e:SyntheticEvent) => {
+  const submitHeandler = (e: SyntheticEvent) => {
     e.preventDefault();
-    mutate(title)
-  
-  }
-  
+    mutate(title);
+  };
+
   return (
     <div>
       {/* <button onClick={()=> refetch()}>Refresh</button> Вариант с рефетчем*/}
       {/* {error && <div>{error}</div>} */}
       <button onClick={() => queryClient.invalidateQueries(["todos"])}>
-
         Refresh
       </button>
-      
+       {!!countFetching && <h3>countFetching: {countFetching}</h3>}
       <h1>TODOS</h1>
       {isLoading ? (
         <div>Loading...</div>
       ) : data?.length ? (
-<div  className="todosItem">{        data.map((todo) => (
-          <div key={todo.id}>
-            <b>{todo.id}:</b>
-            {todo.title}
-          </div>
-        ))}</div>
+        <div className="todosItem">
+          {data.map((todo) => (
+            <div key={todo.id}>
+              <b>{todo.id}:</b>
+              {todo.title}
+            </div>
+          ))}
+        </div>
       ) : (
         <div>data not found</div>
       )}
+      <div>
+        <h2>Create Todo</h2>
+        <form onSubmit={submitHeandler}>
           <div>
-  <h2>Create Todo</h2>
-  <form onSubmit={submitHeandler}>
-    <div>
-    <input 
-    type="text" 
-    title={title} 
-    onChange={(e)=>setTitle(e.target.value)} 
-    value={title} 
-    placeholder="Enter todo title" />
+            <input
+              type="text"
+              title={title}
+              onChange={(e) => setTitle(e.target.value)}
+              value={title}
+              placeholder="Enter todo title"
+            />
+          </div>
+          <button>Create</button>
+        </form>
+      </div>
     </div>
-    <button>Create</button>
-  </form>
-  </div>
-    </div>
-    
-  )
+  );
 }
 
 export { App };
